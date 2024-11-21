@@ -56,13 +56,13 @@ async fn main() -> anyhow::Result<()> {
                 //     [U8, I16, I32, I64, F32, F64, Bit, String, Guid, Numeric, Xml],
                 //     "Unsupported".to_string()
                 // );
-                println!("asdl");
 
                 match cell {
                     ColumnData::DateTime(Some(s)) => println!("{:?}", s),
                     ColumnData::DateTime2(Some(s)) => println!("{:?}", s),
                     ColumnData::SmallDateTime(Some(s)) => println!("{:?}", s),
                     ColumnData::DateTimeOffset(Some(s)) => println!("{:?}", s),
+                    ColumnData::Time(Some(s)) => println!("{:?}", s),
                     _ => (),
                 }
 
