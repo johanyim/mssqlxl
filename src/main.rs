@@ -58,11 +58,11 @@ async fn main() -> anyhow::Result<()> {
                 // );
 
                 match cell {
-                    ColumnData::DateTime(Some(s)) => println!("{:?}", s),
-                    ColumnData::DateTime2(Some(s)) => println!("{:?}", s),
-                    ColumnData::SmallDateTime(Some(s)) => println!("{:?}", s),
-                    ColumnData::DateTimeOffset(Some(s)) => println!("{:?}", s),
-                    ColumnData::Time(Some(s)) => println!("{:?}", s),
+                    ColumnData::DateTime(s) => println!("{:?}", s),
+                    ColumnData::DateTime2(s) => println!("{:?}", s),
+                    ColumnData::SmallDateTime(s) => println!("{:?}", s),
+                    ColumnData::DateTimeOffset(s) => println!("{:?}", s),
+                    ColumnData::Time(s) => println!("{:?}", s),
                     _ => (),
                 }
 
