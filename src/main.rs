@@ -1,5 +1,6 @@
 use std::{borrow::Cow, fmt::Debug};
 
+use chrono::{Days, NaiveDate};
 use futures::TryStreamExt;
 use rust_xlsxwriter::Workbook;
 use tiberius::{AuthMethod, Client, ColumnData, Config, QueryItem, QueryStream};
@@ -38,10 +39,21 @@ async fn main() -> anyhow::Result<()> {
         fn s_or_null<T: ToString>(t: Option<T>) -> String {
             t.map(|v| v.to_string()).unwrap_or("NULL".to_string())
         }
+
+        fn datestring_from_days(date_opt: Option<tiberius::time::Date>) -> String {
+            match date_opt {
+                Some(s) => (chrono::NaiveDate::from_ymd_opt(1, 1, 1).unwrap()
+                    + Days::new(s.days() as u64))
+                .to_string(),
+                None => "NULL".to_string(),
+            }
+        }
+
         macro_rules! arms {
             ($matcher:ident, [$( $Variant:ident), *], $fallback:expr) => {
                 match $matcher {
                     // $(ColumnData::$Variant(val) => val.map(|v| v.to_string()).unwrap_or("NULL".to_string()), )*
+                    ColumnData::Date(val) =>datestring_from_days(val),
                     $(ColumnData::$Variant(val) => s_or_null(val), )*
                     _ => $fallback,
 
@@ -51,23 +63,11 @@ async fn main() -> anyhow::Result<()> {
 
         if let Some(row_data) = row.into_row() {
             for (col_index, cell) in row_data.into_iter().enumerate() {
-                // let s = arms!(
-                //     cell,
-                //     [U8, I16, I32, I64, F32, F64, Bit, String, Guid, Numeric, Xml],
-                //     "Unsupported".to_string()
-                // );
-
-                match cell {
-                    ColumnData::DateTime(s) => println!("{:?}", s),
-                    ColumnData::DateTime2(s) => println!("{:?}", s),
-                    ColumnData::SmallDateTime(s) => println!("{:?}", s),
-                    ColumnData::DateTimeOffset(s) => println!("{:?}", s),
-                    ColumnData::Time(s) => println!("{:?}", s),
-                    ColumnData::Date(s) => println!("{:?}, days = {}", s, s.unwrap().days()),
-                    _ => (),
-                }
-
-                let s = "adasldk".to_string();
+                let s = arms!(
+                    cell,
+                    [U8, I16, I32, I64, F32, F64, Bit, String, Guid, Numeric, Xml],
+                    "Unsupported".to_string()
+                );
 
                 // match cell {
                 //      ColumnData::String(Some(val)) => val.to_string(),
