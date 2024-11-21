@@ -38,53 +38,39 @@ async fn main() -> anyhow::Result<()> {
             row_index += 1;
         }
 
-        if let Some(x) = row.into_row() {
-            for (col_index, data) in x.into_iter().enumerate() {
-                let z = match data {
-                    ColumnData::String(Some(val)) => val.to_string(),
-                    ColumnData::I16(Some(val)) => val.to_string(),
-                    ColumnData::I32(Some(val)) => val.to_string(),
-                    ColumnData::I64(Some(val)) => val.to_string(),
-                    ColumnData::U8(Some(val)) => val.to_string(),
-                    ColumnData::F32(Some(val)) => val.to_string(),
-                    ColumnData::F64(Some(val)) => val.to_string(),
-                    ColumnData::Bit(Some(val)) => val.to_string(),
-                    _ => "Unsupported".to_string(),
-                };
-                worksheet.write_string(row_index, col_index as u16, z)?;
+        macro_rules! arms {
+            ($matcher:ident, [$( $Variant:ident), *], $fallback:expr) => {
+                match $matcher {
+                    $(ColumnData::$Variant(val) => val.map(|v| v.to_string()).unwrap_or("NULL".to_string()), )*
+                    _ => $fallback,
+
+                }
+            };
+        }
+
+        if let Some(row_data) = row.into_row() {
+            for (col_index, cell) in row_data.into_iter().enumerate() {
+                let s = arms!(
+                    cell,
+                    [String, I16, I32, I64, U8, F32, F64, Bit],
+                    "Unsupported".to_string()
+                );
+
+                // match cell {
+                //      ColumnData::String(Some(val)) => val.to_string(),
+                //      ColumnData::I16(Some(val)) => val.to_string(),
+                //      ColumnData::I32(Some(val)) => val.to_string(),
+                //      ColumnData::I64(Some(val)) => val.to_string(),
+                //      ColumnData::U8(Some(val)) => val.to_string(),
+                //      ColumnData::F32(Some(val)) => val.to_string(),
+                //      ColumnData::F64(Some(val)) => val.to_string(),
+                //      ColumnData::Bit(Some(val)) => val.to_string(),
+                //      _ => "Unsupported".to_string(),
+                //  };
+                worksheet.write_string(row_index, col_index as u16, s)?;
             }
         }
 
-        // for columndata in row.into_row() {
-        //     let cell_value = "NULL";
-        //
-        //     let cell_value = match columndata {
-        //         tiberius::ColumnData::String(Some(val)) => val,
-        //         tiberius::ColumnData::I32(Some(val)) => Cow::from(val.to_string()),
-        //         tiberius::ColumnData::F64(Some(val)) => Cow::from(val.to_string()),
-        //         _ => Cow::from("Unsupported"),
-        //         // None => "NULL".to_string(),
-        //     };
-        //     worksheet.write_string(row_index, col_index as u16, &*cell_value)?;
-        // }
-        // row_index += 1;
-
-        // // Write data for each subsequent row
-        // // for (col_index, value) in row.into_iter().enumerate() {
-        // for (col_index, value) in row.into_row().iter().enumerate() {
-        //     for (column, columndata) in value.cells() {
-        //         let cell_value = match columndata {
-        //             tiberius::ColumnData::String(Some(val)) => val,
-        //             tiberius::ColumnData::I32(Some(val)) => &Cow::from(val.to_string()),
-        //             tiberius::ColumnData::F64(Some(val)) => &Cow::from(val.to_string()),
-        //             _ => &Cow::from("Unsupported"),
-        //             // None => "NULL".to_string(),
-        //         };
-        //         worksheet.write_string(row_index, col_index as u16, &**cell_value)?;
-        //
-        //         println!("{cell_value:?}");
-        //     }
-        // }
         row_index += 1;
     }
 
