@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use futures::TryStreamExt;
 use rust_xlsxwriter::Workbook;
 use tiberius::{AuthMethod, Client, Config, QueryItem, QueryStream};
@@ -39,18 +41,23 @@ async fn main() -> anyhow::Result<()> {
             row_index += 1;
         }
 
-        // // Write data for each subsequent row
+        // Write data for each subsequent row
         // for (col_index, value) in row.into_iter().enumerate() {
-        //     let cell_value = match value {
-        //         Some(tiberius::ColumnData::String(Some(val))) => val,
-        //         Some(tiberius::ColumnData::I32(Some(val))) => val.to_string(),
-        //         Some(tiberius::ColumnData::F64(Some(val))) => val.to_string(),
-        //         Some(_) => "Unsupported".to_string(),
-        //         None => "NULL".to_string(),
-        //     };
-        //     worksheet.write_string(row_index, col_index as u16, &cell_value, None)?;
-        // }
-        // row_index += 1;
+        for (col_index, value) in row.into_row().iter().enumerate() {
+            for (column, columndata) in value.cells() {
+                let cell_value = match columndata {
+                    tiberius::ColumnData::String(Some(val)) => val,
+                    tiberius::ColumnData::I32(Some(val)) => &Cow::from(val.to_string()),
+                    tiberius::ColumnData::F64(Some(val)) => &Cow::from(val.to_string()),
+                    _ => &Cow::from("Unsupported"),
+                    // None => "NULL".to_string(),
+                };
+                worksheet.write_string(row_index, col_index as u16, &**cell_value)?;
+
+                println!("{cell_value:?}");
+            }
+        }
+        row_index += 1;
     }
 
     // Step 5: Save the Excel file
