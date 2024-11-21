@@ -63,6 +63,7 @@ async fn main() -> anyhow::Result<()> {
                     ColumnData::SmallDateTime(s) => println!("{:?}", s),
                     ColumnData::DateTimeOffset(s) => println!("{:?}", s),
                     ColumnData::Time(s) => println!("{:?}", s),
+                    ColumnData::Date(s) => println!("{:?}", s),
                     _ => (),
                 }
 
