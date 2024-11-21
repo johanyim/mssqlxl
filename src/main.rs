@@ -1,4 +1,4 @@
-use std::borrow::Cow;
+use std::{borrow::Cow, fmt::Debug};
 
 use futures::TryStreamExt;
 use rust_xlsxwriter::Workbook;
@@ -22,11 +22,9 @@ async fn main() -> anyhow::Result<()> {
     let mut client = Client::connect(config, tcp.compat_write()).await?;
     let mut stream = client.simple_query(query).await?;
 
-    // Step 3: Prepare Excel workbook
     let mut workbook = Workbook::new();
     let worksheet = workbook.add_worksheet();
 
-    // Step 4: Write data to the worksheet
     let mut row_index = 0;
 
     while let Some(row) = stream.try_next().await? {
@@ -37,11 +35,14 @@ async fn main() -> anyhow::Result<()> {
             }
             row_index += 1;
         }
-
+        fn s_or_null<T: ToString>(t: Option<T>) -> String {
+            t.map(|v| v.to_string()).unwrap_or("NULL".to_string())
+        }
         macro_rules! arms {
             ($matcher:ident, [$( $Variant:ident), *], $fallback:expr) => {
                 match $matcher {
-                    $(ColumnData::$Variant(val) => val.map(|v| v.to_string()).unwrap_or("NULL".to_string()), )*
+                    // $(ColumnData::$Variant(val) => val.map(|v| v.to_string()).unwrap_or("NULL".to_string()), )*
+                    $(ColumnData::$Variant(val) => s_or_null(val), )*
                     _ => $fallback,
 
                 }
@@ -50,11 +51,22 @@ async fn main() -> anyhow::Result<()> {
 
         if let Some(row_data) = row.into_row() {
             for (col_index, cell) in row_data.into_iter().enumerate() {
-                let s = arms!(
-                    cell,
-                    [String, I16, I32, I64, U8, F32, F64, Bit],
-                    "Unsupported".to_string()
-                );
+                // let s = arms!(
+                //     cell,
+                //     [U8, I16, I32, I64, F32, F64, Bit, String, Guid, Numeric, Xml],
+                //     "Unsupported".to_string()
+                // );
+                println!("asdl");
+
+                match cell {
+                    ColumnData::DateTime(Some(s)) => println!("{:?}", s),
+                    ColumnData::DateTime2(Some(s)) => println!("{:?}", s),
+                    ColumnData::SmallDateTime(Some(s)) => println!("{:?}", s),
+                    ColumnData::DateTimeOffset(Some(s)) => println!("{:?}", s),
+                    _ => (),
+                }
+
+                let s = "adasldk".to_string();
 
                 // match cell {
                 //      ColumnData::String(Some(val)) => val.to_string(),
@@ -74,7 +86,6 @@ async fn main() -> anyhow::Result<()> {
         row_index += 1;
     }
 
-    // Step 5: Save the Excel file
     workbook.save("output.xlsx")?;
     println!("Excel file created: output.xlsx");
 
